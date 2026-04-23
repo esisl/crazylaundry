@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $score = (int)($input['score'] ?? 0);
     $initData = $_SERVER['HTTP_X_TELEGRAM_INIT_DATA'] ?? '';
+    $initData = stripcslashes($initData);
 
     debugLog('Распарсенные данные', [
         'score' => $score,
