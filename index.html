@@ -151,6 +151,25 @@
       gameRunning = true;
       lastTime = performance.now();
       requestAnimationFrame(loop);
+
+
+	  // Диагностика при запуске
+		(function diagnose() {
+		log('🚀 Инициализация...', 'info');
+		
+		// Проверка SDK
+		if (window.Telegram?.WebApp) {
+			log('✅ Telegram SDK доступен', 'info');
+			log(`👤 User (unsafe): ${JSON.stringify(window.Telegram.WebApp.initDataUnsafe?.user || {})}`, 'info');
+		} else {
+			logWarn('⚠️ Telegram SDK НЕ загружен. Проверьте: 1) интернет 2) путь к telegram-web-app.js');
+		}
+		
+		// Проверка API эндпоинта
+		fetch('./api/scores.php')
+			.then(r => log(`🔍 GET /api/scores.php: ${r.status}`, r.ok ? 'info' : 'warn'))
+			.catch(e => logError(`🔍 Ошибка проверки API: ${e.message}`));
+		})();
     }
 
     function gameOver() {
@@ -163,26 +182,110 @@
     document.getElementById('submit-btn').onclick = submitScore;
 
     async function submitScore() {
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.textContent = 'Отправка...';
-      try {
-        const initData = window.Telegram?.WebApp?.initData || '';
-        const res = await fetch('./api/scores.php', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({score, initData})
-        });
-        const data = await res.json();
-		alert(data);
-        btn.textContent = data.status === 'ok' ? '✅ Сохранено' : '❌ Ошибка';
-      } catch(e) {
-        btn.textContent = '❌ Сеть';
-        console.error(e);
-		alert(e);
-      }
-    }
+		const btn = document.getElementById('submit-btn');
+		btn.disabled = true;
+		
+		try {
+			log(`📤 Отправка рекорда: ${score}`, 'info');
+			
+			// 1. Проверка наличия Telegram SDK
+			const tg = window.Telegram?.WebApp;
+			if (!tg) {
+			logError('❌ Telegram.WebApp не найден! Проверьте загрузку telegram-web-app.js');
+			btn.textContent = '❌ Нет SDK';
+			return;
+			}
+			log(`✅ SDK загружен. initData длина: ${tg.initData?.length || 0} симв.`, 'info');
+			
+			// 2. Проверка initData
+			const initData = tg.initData || '';
+			if (!initData) {
+			logWarn('⚠️ initData пуст. Игра запущена вне Telegram?');
+			// Можно продолжить для теста, но сервер вернёт 401
+			}
+			
+			btn.textContent = 'Отправка...';
+			
+			// 3. Отправка запроса
+			const response = await fetch('./api/scores.php', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({score, initData})
+			});
+			
+			log(`📡 Ответ сервера: ${response.status} ${response.statusText}`, response.ok ? 'info' : 'error');
+			
+			// 4. Чтение тела ответа
+			const text = await response.text();
+			log(`📄 Тело ответа: ${text.substring(0, 200)}${text.length > 200 ? '...' : ''}`, 'info');
+			
+			let data;
+			try {
+			data = JSON.parse(text);
+			} catch (e) {
+			logError(`❌ Не удалось распарсить JSON: ${e.message}`);
+			btn.textContent = '❌ Ошибка парсинга';
+			return;
+			}
+			
+			// 5. Обработка результата
+			if (response.ok && data.status === 'ok') {
+			log(`✅ Рекорд сохранён! ${data.saved ? 'Новый рекорд!' : 'Не лучше предыдущего'}`, 'info');
+			btn.textContent = '✅ Сохранено';
+			} else {
+			logError(`❌ Ошибка: ${data.error || 'Неизвестная'}`);
+			btn.textContent = `❌ ${data.error || 'Ошибка'}`;
+			}
+			
+		} catch (e) {
+			logError(`🔥 Исключение: ${e.name}: ${e.message}`);
+			btn.textContent = '❌ Сеть/Код';
+		} finally {
+			btn.disabled = false;
+		}
+		}
 
     startGame();
   </script>
+
+
+
+<!-- DEBUG CONSOLE - вставьте перед </body> -->
+<div id="debug-panel" style="position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:rgba(0,0,0,0.9);color:#0f0;font:12px monospace;padding:8px;z-index:99999;display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+    <strong>DEBUG</strong>
+    <button onclick="toggleDebug();return false" style="padding:2px 8px;font-size:11px;">✕</button>
+  </div>
+  <div id="debug-log"></div>
+  <button onclick="clearDebug();return false" style="margin-top:5px;padding:2px 8px;font-size:11px;">Очистить</button>
+</div>
+<script>
+  // === Утилиты отладки ===
+  function log(msg, type='info') {
+    const panel = document.getElementById('debug-panel');
+    const logEl = document.getElementById('debug-log');
+    const time = new Date().toLocaleTimeString();
+    const color = type==='error'?'#f66':type==='warn'?'#ff0':'#0f0';
+    logEl.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+    logEl.scrollTop = logEl.scrollHeight;
+    panel.style.display = 'block';
+    console.log(`[DEBUG ${type.toUpperCase()}] ${msg}`);
+  }
+  function logError(msg) { log(msg, 'error'); }
+  function logWarn(msg) { log(msg, 'warn'); }
+  function clearDebug() { document.getElementById('debug-log').innerHTML = ''; }
+  function toggleDebug() {
+    const panel = document.getElementById('debug-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+  // Показать панель по долгому тапу на канвас (для мобильных)
+  document.getElementById('game')?.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) toggleDebug();
+  }, {passive:true});
+  // Горячая клавиша для Desktop: Ctrl+D
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleDebug(); }
+  });
+</script>
 </body>
 </html>
