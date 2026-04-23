@@ -47,7 +47,7 @@ function verifyInitData(string $initData, string $botToken): bool {
     unset($params['hash']);
     
     uksort($params, fn($a, $b) => $a <=> $b);
-    $dataCheckString = '@@@@'.implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params)).'####';
+    $dataCheckString = implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params));
     
     debugLog('data_check_string', $dataCheckString);
 
@@ -77,8 +77,8 @@ $db->exec('CREATE TABLE IF NOT EXISTS scores (
 // === ОБРАБОТКА ЗАПРОСОВ ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $initData = $input['initData'] ?? ($_SERVER['HTTP_X_TELEGRAM_INIT_DATA'] ?? '');
     $score = (int)($input['score'] ?? 0);
+    $initData = $_SERVER['HTTP_X_TELEGRAM_INIT_DATA'] ?? '';
 
     debugLog('Распарсенные данные', [
         'score' => $score,

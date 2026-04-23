@@ -181,14 +181,11 @@
     document.getElementById('restart-btn').onclick = startGame;
     document.getElementById('submit-btn').onclick = submitScore;
 
-    
-	async function submitScore() {
+    async function submitScore() {
 		const btn = document.getElementById('submit-btn');
 		btn.disabled = true;
 		
 		try {
-			log(`📤 Отправка рекорда: ${score}`, 'info');
-			
 			const tg = window.Telegram?.WebApp;
 			if (!tg) {
 			logError('❌ Telegram.WebApp не найден!');
@@ -197,36 +194,28 @@
 			}
 			
 			const initData = tg.initData || '';
-			log(`🔑 initData (первые 100 симв.): ${initData.substring(0, 100)}...`, 'info');
 			
-			// === НОВЫЙ ЛОГ: что именно отправляем ===
-			const payload = {score, initData};
-			log(`📦 Тело запроса (JSON): ${JSON.stringify(payload).substring(0, 300)}...`, 'info');
-			// =========================================
-			
-			btn.textContent = 'Отправка...';
-			
+			// Отправляем score как JSON, а initData — в заголовке
 			const response = await fetch('./api/scores.php', {
 			method: 'POST',
-			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify(payload) // используем тот же объект
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Telegram-Init-Data': initData  // ← Сырая строка, без кодирования
+			},
+			body: JSON.stringify({score})  // ← Только score в теле
 			});
 			
-			log(`📡 Ответ: ${response.status}`, response.ok ? 'info' : 'error');
-			const text = await response.text();
-			log(`📄 Ответ (тело): ${text}`, 'info');
-			
-			// ... остальная обработка ...
+			// ... остальная обработка ответа ...
 			
 		} catch (e) {
-			logError(`🔥 Исключение: ${e.name}: ${e.message}`);
-			btn.textContent = '❌ Сеть/Код';
+			logError(`🔥 Исключение: ${e.message}`);
+			btn.textContent = '❌ Ошибка';
 		} finally {
 			btn.disabled = false;
 		}
 		}
-
-
+	
+	
     startGame();
   </script>
 
