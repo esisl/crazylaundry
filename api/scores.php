@@ -47,7 +47,7 @@ function verifyInitData(string $initData, string $botToken): bool {
     unset($params['hash']);
     
     uksort($params, fn($a, $b) => $a <=> $b);
-    $dataCheckString = implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params));
+    $dataCheckString = '@@@@'.implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params)).'####';
     
     debugLog('data_check_string', $dataCheckString);
 
