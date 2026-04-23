@@ -181,61 +181,42 @@
     document.getElementById('restart-btn').onclick = startGame;
     document.getElementById('submit-btn').onclick = submitScore;
 
-    async function submitScore() {
+    
+	async function submitScore() {
 		const btn = document.getElementById('submit-btn');
 		btn.disabled = true;
 		
 		try {
 			log(`📤 Отправка рекорда: ${score}`, 'info');
 			
-			// 1. Проверка наличия Telegram SDK
 			const tg = window.Telegram?.WebApp;
 			if (!tg) {
-			logError('❌ Telegram.WebApp не найден! Проверьте загрузку telegram-web-app.js');
+			logError('❌ Telegram.WebApp не найден!');
 			btn.textContent = '❌ Нет SDK';
 			return;
 			}
-			log(`✅ SDK загружен. initData длина: ${tg.initData?.length || 0} симв.`, 'info');
 			
-			// 2. Проверка initData
 			const initData = tg.initData || '';
-			if (!initData) {
-			logWarn('⚠️ initData пуст. Игра запущена вне Telegram?');
-			// Можно продолжить для теста, но сервер вернёт 401
-			}
+			log(`🔑 initData (первые 100 симв.): ${initData.substring(0, 100)}...`, 'info');
+			
+			// === НОВЫЙ ЛОГ: что именно отправляем ===
+			const payload = {score, initData};
+			log(`📦 Тело запроса (JSON): ${JSON.stringify(payload).substring(0, 300)}...`, 'info');
+			// =========================================
 			
 			btn.textContent = 'Отправка...';
 			
-			// 3. Отправка запроса
 			const response = await fetch('./api/scores.php', {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify({score, initData})
+			body: JSON.stringify(payload) // используем тот же объект
 			});
 			
-			log(`📡 Ответ сервера: ${response.status} ${response.statusText}`, response.ok ? 'info' : 'error');
-			
-			// 4. Чтение тела ответа
+			log(`📡 Ответ: ${response.status}`, response.ok ? 'info' : 'error');
 			const text = await response.text();
-			log(`📄 Тело ответа: ${text.substring(0, 200)}${text.length > 200 ? '...' : ''}`, 'info');
+			log(`📄 Ответ (тело): ${text}`, 'info');
 			
-			let data;
-			try {
-			data = JSON.parse(text);
-			} catch (e) {
-			logError(`❌ Не удалось распарсить JSON: ${e.message}`);
-			btn.textContent = '❌ Ошибка парсинга';
-			return;
-			}
-			
-			// 5. Обработка результата
-			if (response.ok && data.status === 'ok') {
-			log(`✅ Рекорд сохранён! ${data.saved ? 'Новый рекорд!' : 'Не лучше предыдущего'}`, 'info');
-			btn.textContent = '✅ Сохранено';
-			} else {
-			logError(`❌ Ошибка: ${data.error || 'Неизвестная'}`);
-			btn.textContent = `❌ ${data.error || 'Ошибка'}`;
-			}
+			// ... остальная обработка ...
 			
 		} catch (e) {
 			logError(`🔥 Исключение: ${e.name}: ${e.message}`);
@@ -244,6 +225,7 @@
 			btn.disabled = false;
 		}
 		}
+
 
     startGame();
   </script>
