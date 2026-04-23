@@ -1,0 +1,556 @@
+<html>
+<head>
+<meta charset="cp1251"/>
+<title>Crazy Laundry</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="js/preload.js"></script>
+<script src="js/sprite.js"></script>
+<script src="js/map.js"></script>
+<script src="js/platform.js"></script>
+<script src="js/enemy.js"></script>
+<script src="js/fairy.js"></script>
+<script src="js/charaster.js"></script>
+<script src="js/keys.js"></script>
+<script src="js/shmotka.js"></script>
+<script src="js/level.js"></script>
+<script src="js/load_levels.js"></script>
+</head>
+<body bgcolor="Black" leftmargin="0" topmargin="0" rightmargin="0" bottommargin="0" onload="setTimeout('drawStart()', 1000);">
+
+<div style="background-color:#000;">
+<canvas id="gameCanvas"></canvas>
+</div>
+<div id="LevelDIV" style="position:absolute; left:550px; top:10px; color:#ffff00;">Loading...</div>
+<div id="debug" style="position:relative;left:0px; top:650px;color:#fff;">
+</div>
+<audio id="fon_music" src="mus0.ogg" loop></audio>
+<audio id="fon_music1" src="mus1.ogg" loop></audio>
+<audio id="fon_music4" src="mus4.ogg" loop></audio>
+<audio id="step_ogg" src="step.ogg"></audio>
+<audio id="stiralka_ogg" src="Stiralnaya_mashina.ogg" loop></audio>
+<audio id="panic" src="game_over.ogg"></audio>
+<audio id="ovation" src="ovation.ogg"></audio>
+<audio id="get_shmotku" src="get_shmotku.ogg"></audio>
+</body>
+<script>
+function supports_canvas() {
+	return !!document.createElement('canvas').getContext; 
+}
+var gloCanvasEnable=supports_canvas();
+
+var gameCanvass = document.getElementById("gameCanvas");
+var ctx = gameCanvass.getContext('2d');
+
+
+gameCanvas.width  = 640;//1010;
+gameCanvas.height = 480;//600;
+var gloMode = 'start';//���������� ���� ���������
+						//start - ��������� ��������
+						//level - ������
+						//win - ��������
+						//loose - ���������
+var flagNoRefres = false;//���� ���������� �������, ��� ��������������� ������� �� ������ ������
+
+
+//var context = document.getElementById('context');
+var debug = document.getElementById('debug');
+
+//�����
+var step=document.getElementById('step_ogg');
+var stiralka_sound=document.getElementById('stiralka_ogg');
+var paniv_sound=document.getElementById('panic');
+var fon_sound=document.getElementById('fon_music');
+var fon_sound1=document.getElementById('fon_music1');
+var fon_sound4=document.getElementById('fon_music4');
+var ovation_sound=document.getElementById('ovation');
+var get_shmotku_sound=document.getElementById('get_shmotku');
+fon_sound.play();
+
+
+var fon_win = new sprite('fon_winS', 'sprites/fon_win.jpg', 1010, 610, [1]);
+var win = new sprite('winS', 'sprites/win.png', 79, 160, [2]);
+var fon_game_over = new sprite('fon_game_overS', 'sprites/fon_game_over.jpg', 1010, 610, [1]);
+var fon_start = new sprite('fon_startS', 'sprites/start.jpg', 1010,610, [1]);
+var game_over = new sprite('game_overS', 'sprites/game_over.png', 173,300,[3]);
+var boss = new sprite('bossS', 'sprites/boss.png',61,99,[10]);
+
+var fon = new sprite('fonS', 'sprites/fon.jpg', 1010, 610, [1]);
+var fon_blue = new sprite('fon_blueS', 'sprites/fon_blue.jpg', 1010, 610, [1]);
+var fon_green = new sprite('fon_greenS', 'sprites/fon_green.jpg', 1010, 610, [1]);
+var fon_boss = new sprite('fon_bossS', 'sprites/fon_boss.jpg', 26, 117, [1]);
+
+var kuvshin = new sprite('kuvshinS', 'sprites/kuvshin.png', 50, 68, [9]);
+kuvshin.setAlign('center');
+var chainik = new sprite('chainikS', 'sprites/chainik.png', 72, 75, [9]);
+chainik.setAlign('center');
+var utjug = new sprite('utjugS', 'sprites/utjug.png', 120, 58, [2]);
+utjug.setAlign('center');
+var stiralka = new sprite('stiralkaS', 'sprites/stiralka.png', 65, 90, [3]);
+stiralka.setAlign('center');
+var shtany = new sprite('shtanyS', 'sprites/shtany.png', 50, 53, [6]);
+shtany.setAlign('top');
+var raspashonka = new sprite('raspashonkaS', 'sprites/raspashonka.png', 60, 47, [5]);
+raspashonka.setAlign('top');
+
+var liveS = new sprite('liveS', 'sprites/live.png', 14, 30, [1]);
+var charasterS = new sprite('charasterS', 'sprites/charaster.png', 63, 100, [1,10,4,3]);
+
+var map = new map('mapS', 10, 4, 100, 150);
+
+map.blocks[0]=new platform('block', 'nil', 110, 150, 'sprites/plan/pusto.png', 1);
+map.blocks[1]=new platform('block', 'pl', 110, 150, 'sprites/plan/line.png', 1);
+map.blocks[2]=new platform('block', 'pl_lest', 110, 150, 'sprites/plan/line.png', 1);
+map.blocks[3]=new platform('block', 'lest_pl', 110, 150, 'sprites/plan/lestnicaonline.png', 1);
+map.blocks[4]=new platform('block', 'lest_pl_cl', 110, 150, 'sprites/plan/lestnicaonline.png', 1);
+map.blocks[5]=new platform('block', 'lest', 110, 150, 'sprites/plan/lestnica.png', 1);
+map.blocks[6]=new platform('block', 'wall', 110, 150, 'sprites/plan/wall.png', 1);
+
+var enemy0 = new enemy('k1', kuvshin);
+var enemy1 = new enemy('c1', chainik);
+var enemy2 = new enemy('u1', utjug);
+
+//���������� ������ � ���������� ������. ��� ������ ��������� ������ ���������� ����
+var fairy_srite = new sprite('fairyS', 'sprites/fairy.png', 22, 49, [11]);
+fairy_srite.setAlign('top');
+
+var enemy_f = new Array();
+function fairyInit(){
+	for(var i=0;i<20;i++){
+		enemy_f[i] = new fairy('fr'+i, fairy_srite);
+		enemy_f[i].x=505;
+		enemy_f[i].y=75-i*50;
+		enemy_f[i].vx=0;
+		enemy_f[i].vy=enemy_f[i].vConst;
+		if(Math.random()>0.5){
+			enemy_f[i].mainDir=enemy_f[i].vConst;
+		}else{
+			enemy_f[i].mainDir=-enemy_f[i].vConst;
+		}
+	}
+}
+fairyInit();
+var finalLevel=false;
+var wong = new charaster('wong', charasterS);
+
+charasterS.setAlign('bottom');
+charasterS.alignX+=8;
+
+var currentLevel=0;
+var pauseMode=false;
+function setCharasterKey(arr){
+	switch(gloMode){
+		case 'start':
+			if(arr.length){
+				gloMode='level';
+				wong.lives=5;
+				startLevel(0);
+				refresh();
+			}
+		break;
+		case 'level':
+			//����� ����� ��������� ����������
+			wong.mode='standing';
+			for(var i in arr){
+				if(arr[i]=='Up'){wong.old_mode=wong.mode;wong.mode='walk up';}
+				if(arr[i]=='Down'){wong.old_mode=wong.mode;wong.mode='walk down';}
+				if(arr[i]=='Left'){
+					if(wong.mode=='jump'){
+						wong.old_mode=wong.mode;wong.mode='jump left';
+					}else{
+						wong.old_mode=wong.mode;wong.mode='moving left';
+					}
+				}
+				if(arr[i]=='Right'){
+					if(wong.mode=='jump'){
+						wong.old_mode=wong.mode;wong.mode='jump right';
+					}else{
+						wong.old_mode=wong.mode;wong.mode='moving right';
+					}
+				}
+				if(arr[i]=='Shift'){
+					if(wong.mode=='moving left'){
+						wong.old_mode=wong.mode;wong.mode='jump left';
+					}else if(wong.mode=='moving right'){
+						wong.old_mode=wong.mode;wong.mode='jump right';
+					}else{wong.old_mode=wong.mode;wong.mode='jump';}
+				}
+				if(arr[i]=='Pause'){
+					pauseMode=!pauseMode;
+					if(!pauseMode){setTimeout('refresh()', 50);}
+				}
+//������� ��� �������� �� ��������� ������� �� ������ "������"
+//				if(arr[i]=='Space'){
+//					wong.getShmotka=false;
+//					if(levels[currentLevel+1]!=null){
+//						startLevel(currentLevel+1);
+//						//������� �� ��������� �������
+//						//��� ������ �������!
+//					}else{
+//						flagNoRefres=true;
+//						gloMode='win';
+//						setTimeout('drawWin()', 50);//������ �������, ����� ��� ������� �������������, �� �������� ������ � �����
+//					}
+//				}
+			}
+		break;
+		case 'win':
+			if(arr.length){
+				gloMode='start';
+				currentLevel=0;
+				wong.lives=5;
+				setTimeout('drawStart()', 50);//����� ������ �������, ����� �� ��������� ������ � �����
+			}
+		break;
+		case 'loose':
+			if(arr.length){
+				gloMode='start';
+				setTimeout('drawStart()', 50);//����� ������ �������, ����� �� ��������� ������ � �����
+			}
+		break;
+	}
+}
+
+var scaleCount=1;
+
+function refresh(){
+	var i;
+	
+	if(pauseMode){
+		//������� �����
+		document.getElementById('LevelDIV').innerHTML='<i><font color="Yellow">Pause</font></i>';
+		return false;
+	}
+	var s='';
+	if(currentLevel<=25){
+		s+=fon.draw(0,0,0,false);
+	}else if(finalLevel){
+		s+=fon_green.draw(0,0,0,false);
+	}else{
+		s+=fon_blue.draw(0,0,0,false);
+	}
+	s+=map.draw();
+	
+	if(!finalLevel){
+		s+=enemy0.draw();
+		s+=enemy1.draw();
+		s+=enemy2.draw();
+	}
+
+	s+=stiralka.draw(levels[currentLevel].stiralka[0],levels[currentLevel].stiralka[1],0,false);
+	//�������. ����� ���� ��� �����, ����� �������� ������ �� ����
+	if(wong.mode=='walk up'){
+		s+=map.drawShmotki();
+		s+=wong.draw();
+	}else{
+		s+=wong.draw();
+		s+=map.drawShmotki();
+	}
+	
+	if(!finalLevel){
+		enemy0.step(map);
+		enemy1.step(map);
+		enemy2.step(map);
+	}
+	wong.step(map);
+	var nShmod=map.checkTakeShmotka();//���������� ����� ����������� ������
+	
+	//��������� ������������ �� ���������� ��������
+	if(wong.sprite.checkOverlap(stiralka)){
+		for(var i in map.shmotkiList){
+			if(map.shmotkiList[i].mode=='take'){
+				map.shmotkiList[i].mode='hide';
+			}
+		}
+		wong.getShmotka=false;
+	}
+	
+	//��������� ������������ � �������
+	var flagOverlapEnemy=false;
+	
+	if(!finalLevel){
+		if(wong.sprite.checkOverlap(enemy0.sprite)){flagOverlapEnemy=true;}
+		if(wong.sprite.checkOverlap(enemy1.sprite)){flagOverlapEnemy=true;}
+		if(wong.sprite.checkOverlap(enemy2.sprite)){flagOverlapEnemy=true;}
+	}
+	
+	//������� ����� ������ 
+	document.getElementById('LevelDIV').innerHTML='<i><font color="Yellow">Level '+currentLevel+'</font></i>';
+	
+	
+	//��� ���������� ������
+	if(finalLevel){
+		//��������� ������������ � fairy
+		for(var i=0;i<20;i++){
+			//���������
+			enemy_f[i].step(map);
+			s+=enemy_f[i].draw();
+			if(wong.sprite.checkOverlap(enemy_f[i].sprite)){fairyInit();flagOverlapEnemy=true;}
+		}
+		//� ��������� ����������
+		s+=fon_boss.draw(489,0,0,false);
+		s+=boss.draw(475,25,0,false);
+	}
+	
+	//��������� ���������� ����� ��������� � ������
+	var stiralkaDistance = Math.abs(wong.x-stiralka.lastX)+Math.abs(wong.y-stiralka.lastY);
+//debug.innerHTML = 'Math.abs('+wong.x+'-'+stiralka.lastX+')+Math.abs('+wong.y+'-'+stiralka.lastY+');';
+	if(stiralkaDistance<200){
+		stiralka_sound.play();
+	}else{
+		stiralka_sound.pause();
+	}
+	
+	//���� �����
+	if(wong.isStep){
+		step.play();
+		wong.isStep=false;
+	}
+	//������������ ����� ������
+	if(wong.lives==0){
+		//game over
+		gloMode='loose';
+		setTimeout('drawGameOver()', 50);//������ �������, ����� ��� ������� �������������, �� �������� ������ � �����
+	}else{
+		if(nShmod==0){
+			//���������, ��� ����. ������� ����������
+			if(levels[currentLevel+1]!=null){
+				startLevel(currentLevel+1);
+				//������� �� ��������� �������
+				//��� ������ �������!
+				if(!flagNoRefres){
+					setTimeout('refresh()', 50);
+				}
+			}else{
+				flagNoRefres=true;
+				gloMode='win';
+				setTimeout('drawWin()', 50);//������ �������, ����� ��� ������� �������������, �� �������� ������ � �����
+			}
+		}else{		
+			if(flagOverlapEnemy){
+				//������������ ������������ � ������
+				s+=enemyCollision();
+			}else{
+				if(!flagNoRefres){
+					setTimeout('refresh()', 50);
+				}
+			}
+		}
+	}
+	
+	//���� ������� �� ������������ canvas
+	if(!gloCanvasEnable){
+		//context.innerHTML=s;
+	}
+}
+
+var enemyCollisionCount=0;
+//var old_s=context.innerHTML;
+var flagOldContext=true;
+
+function enemyCollision(){
+	//if(flagOldContext){old_s=context.innerHTML;flagOldContext=false;}
+	
+	s='';
+	if(ctx!=null){
+		ctx.fillStyle = "black";
+		for(var i=0;i<10;i++){
+			ctx.fillRect (i*101,0,enemyCollisionCount,600);
+		}
+	}else{
+		//��� ���� �������� ��� ��� ������ ��������
+		for(var i=0;i<10;i++){
+			s+='<div style="position:absolute; left:'+(i*101)+'px; top:0px;width:'+enemyCollisionCount+'px; height:600px; color:#000; background-color:#000;"> </div>'+"\n";
+		}
+	}
+	enemyCollisionCount+=10;
+	
+	if(enemyCollisionCount>102){
+		
+		//���������� � ���������� �����
+		wong.lives--;
+			
+		wong.popStart();
+		enemy0.popStart();
+		enemy1.popStart();
+		enemy2.popStart();
+		enemyCollisionCount=0;
+		flag=false;
+		setTimeout('refresh();', 20);//����� �����, ����� �� ���� ������� � �����
+	}else{
+		flagOldContext=true;
+		setTimeout('enemyCollision()', 50);
+	}
+	
+}
+
+function startLevel(n){
+//debug.innerHTML='level '+n;
+	currentLevel=n;
+	if(currentLevel==26){
+		fon_sound.pause();
+		fon_sound4.pause();
+		fon_sound1.play();
+	}else if(currentLevel==0){
+		fon_sound1.pause();
+		fon_sound4.pause();
+		fon_sound.play();
+	}
+	levels[n].start();
+	if(levels[n].isFinal){
+		finalLevel=true;
+		fon_sound1.pause();
+		fon_sound.pause();
+		fon_sound4.play();		
+	}
+	enemy0.pushStart();
+	enemy1.pushStart();
+	enemy2.pushStart();
+	
+	wong.pushStart();
+	//refresh();
+}
+
+function drawStart(){
+	document.getElementById('LevelDIV').innerHTML='';
+	if(scaleCount>0 && ctx!=null){
+		ctx.scale(0.634,0.787);
+		scaleCount--;
+	}
+	wong.getShmotka=false;
+	finalLevel = false;
+	flagNoRefres = false;
+	fon_sound.play();
+	paniv_sound.pause();
+	ovation_sound.pause();
+	fon_start.draw(0,0,0,false);
+}
+function drawWin(){
+	if(gloMode=='win'){
+		document.getElementById('LevelDIV').innerHTML='';
+		flagNoRefres = true;
+		fon_sound.pause();
+		fon_sound1.pause();
+		fon_sound4.pause();
+		ovation_sound.play();
+		fon_win.draw(0,0,0,false);
+		win.draw(465,225,0,false);
+		setTimeout('drawWin()', 500);
+	}
+}
+function drawGameOver(){
+	//ctx.scale(0.634,0.787);
+	if(gloMode=='loose'){
+		document.getElementById('LevelDIV').innerHTML='';
+		flagNoRefres = true;
+		fon_sound.pause();
+		fon_sound1.pause();
+		fon_sound4.pause();
+		paniv_sound.play();
+		fon_game_over.draw(0,0,0,false);
+		game_over.draw(418,150,0,false);
+		setTimeout('drawGameOver()', 20);
+	}
+}
+
+flagNoRefres = false;
+//setTimeout('drawStart()', 100);
+
+//startLevel(0);
+//refresh();
+
+
+function makeLevel(){
+	var gett=[0,0,0,0,1,1,1,1,1,2,0,3,1,4,0,5,6];
+	var map=[
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0]
+];
+	var jump=[
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0]
+];
+	var x;
+	var y;
+	var s='[';
+	var d='';
+	var pl=1;
+	for(y=0;y<4;y++){
+		var d1='';
+		s+=d+"\n[";
+		for(x=0;x<10;x++){
+			pl=gett[Math.floor(Math.random()*17)];
+			if(y==3 && (pl==0 || pl==2 || pl==3 || pl==5)){pl=1;}
+			if(y==0){
+				if(pl==4){pl=1;}
+				if(pl==3){pl=2;}
+				if(pl==5){pl=0;}
+			}
+			map[y][x]=pl;
+			s+=d1+map[y][x];
+			d1=',';
+		}
+		s+=']';
+		d=',';
+	}
+	s+=']';
+	
+	//������ ����� ����
+	for(y=0;y<3;y++){
+		for(x=0;x<10;x++){
+			if((map[y][x]==0 || map[y][x]==5) && (map[y+1][x]==1 || map[y+1][x]==2)){
+				jump[y+1][x]=1;
+			}
+		}
+	}
+	
+	//debug.innerHTML='<textarea cols=70 rows=7>'+s+'</textarea>';
+levels[0] = new level('level0',map, jump, [
+[1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,2,2,2,2]
+], [100,75,5,0,//enemy0.x=100;enemy0.y=75;enemy0.vx=5;
+100,225,5,0,//enemy1.x=100;enemy1.y=225;enemy1.vx=5;
+100,375,5,0], [100,520], [970,525]);//enemy2.x=100;enemy2.y=375;enemy2.vx=5;
+startLevel(0);
+}
+
+function saveLevel(){
+	s='levels[0] = new level(\'level0\', ';
+	var d='';
+	var pl=1;
+	for(y=0;y<4;y++){
+		var d1='';
+		s+=d+"\n[";
+		for(x=0;x<10;x++){
+			pl=levels[0].map[y][x];
+			s+=d1+pl;
+			d1=',';
+		}
+		s+=']';
+		d=',';
+	}
+	s+='],';
+	
+	var d='';
+	var pl=1;
+	for(y=0;y<4;y++){
+		var d1='';
+		s+=d+"\n[";
+		for(x=0;x<10;x++){
+			pl=levels[0].jumpMap[y][x];
+			s+=d1+pl;
+			d1=',';
+		}
+		s+=']';
+		d=',';
+	}
+	s+="], [\n[1,1,1,1,0,0,0,0,0,0],\n[0,0,0,0,0,0,0,0,0,0],\n[0,0,0,0,0,0,0,0,0,0],\n[0,0,0,0,0,0,2,2,2,2]\n], [100,75,5,0,\n100,225,5,0,\n100,375,5,0], [100,520], [970,525]);\n\n";
+	document.getElementById('saveTXT').value+=s;
+}
+</script>
+</html>
