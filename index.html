@@ -213,12 +213,12 @@
 
 	  // Диагностика при запуске
 		(function diagnose() {
-		log('🚀 Инициализация...', 'info');
+		//log('🚀 Инициализация...', 'info');
 		
 		// Проверка SDK
 		if (window.Telegram?.WebApp) {
-			log('✅ Telegram SDK доступен', 'info');
-			log(`👤 User (unsafe): ${JSON.stringify(window.Telegram.WebApp.initDataUnsafe?.user || {})}`, 'info');
+			//log('✅ Telegram SDK доступен', 'info');
+			//log(`👤 User (unsafe): ${JSON.stringify(window.Telegram.WebApp.initDataUnsafe?.user || {})}`, 'info');
 		} else {
 			logWarn('⚠️ Telegram SDK НЕ загружен. Проверьте: 1) интернет 2) путь к telegram-web-app.js');
 		}
@@ -253,7 +253,7 @@
     }
     
     const initData = tg.initData || '';
-    log(`🔑 initData длина: ${initData.length}`, 'info');
+    //log(`🔑 initData длина: ${initData.length}`, 'info');
     
     // ОТПРАВЛЯЕМ initData В ЗАГОЛОВКЕ, а не в теле
     const response = await fetch('./api/scores.php', {
@@ -265,13 +265,13 @@
       body: JSON.stringify({ score })  // ← В теле только score
     });
     
-    log(`📡 Ответ: ${response.status}`, response.ok ? 'info' : 'error');
+    //log(`📡 Ответ: ${response.status}`, response.ok ? 'info' : 'error');
     const text = await response.text();
-    log(`📄 Тело: ${text}`, 'info');
+    //log(`📄 Тело: ${text}`, 'info');
     
     const data = JSON.parse(text);
     if (response.ok && data.status === 'ok') {
-      log(`✅ Сохранено!`, 'info');
+      //log(`✅ Сохранено!`, 'info');
       btn.textContent = '✅ OK';
     } else {
       logError(`❌ ${data.error || 'Ошибка'}`);
@@ -304,6 +304,7 @@
 <script>
   // === Утилиты отладки ===
   function log(msg, type='info') {
+	/*
     const panel = document.getElementById('debug-panel');
     const logEl = document.getElementById('debug-log');
     const time = new Date().toLocaleTimeString();
@@ -311,6 +312,7 @@
     logEl.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
     logEl.scrollTop = logEl.scrollHeight;
     panel.style.display = 'block';
+	*/
     console.log(`[DEBUG ${type.toUpperCase()}] ${msg}`);
   }
   function logError(msg) { log(msg, 'error'); }
