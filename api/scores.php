@@ -26,8 +26,27 @@ function debugLog($message, $data = null) {
     file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
 }
 
+
+function convertInitData(string $initData): array
+{
+    $initDataArray = explode('&', rawurldecode($initData));
+    $needle        = 'hash=';
+    $hash          = '';
+
+    foreach ($initDataArray as &$data) {
+        if (substr($data, 0, \strlen($needle)) === $needle) {
+            $hash = substr_replace($data, '', 0, \strlen($needle));
+            $data = null;
+        }
+    }
+    $initDataArray = array_filter($initDataArray);
+    sort($initDataArray);
+    return [$hash, implode("\n", $initDataArray)];
+}
+
 // === ВАЛИДАЦИЯ initData ===
 function verifyInitData(string $initData, string $botToken): bool {
+    /*
     $params = [];
     foreach (explode('&', $initData) as $part) {
         [$key, $value] = explode('=', $part, 2);
@@ -50,11 +69,13 @@ function verifyInitData(string $initData, string $botToken): bool {
     
     uksort($params, fn($a, $b) => $a <=> $b);
     $dataCheckString = implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params));
+    */
+    [$dataCheckString, $sortedInitData] = convertInitData($initData);
     
     debugLog('data_check_string', $dataCheckString);
 
     $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
-    $calculated = hash_hmac('sha256', $dataCheckString, $secretKey);
+    $calculated = hash_hmac('sha256', $sortedInitData, $secretKey);
     
     debugLog('Хеши', [
         'received' => $hash,
