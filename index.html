@@ -102,15 +102,6 @@
 			list.innerHTML = `<p style="text-align:center; color:#e94560;">Ошибка: ${e.message}</p>`;
 		}
 	}
-	// Привязка кнопки "Продолжить"
-	document.getElementById('lb-resume').onclick = togglePause;
-
-	// Добавляем кнопку паузы в интерфейс (верхний правый угол)
-	const pauseBtn = document.createElement('button');
-	pauseBtn.innerHTML = '⏸';
-	pauseBtn.style.cssText = 'position:absolute; top:10px; right:10px; width:40px; height:40px; font-size:18px; background:rgba(255,255,255,0.2); border:none; border-radius:50%; color:#fff; cursor:pointer; z-index:50; touch-action: manipulation;';
-	pauseBtn.onclick = togglePause;
-	document.body.appendChild(pauseBtn);
 
     // Управление: тап/клик по левой/правой половине экрана
     function handleInput(clientX) {
@@ -347,5 +338,16 @@
   </div>
   <button id="lb-resume" style="padding:12px 24px; font-size:16px; background:#4ecca3; border:none; border-radius:4px; cursor:pointer; color:#000; font-weight:bold;">▶ ПРОДОЛЖИТЬ</button>
 </div>
+<script>
+		// Привязка кнопки "Продолжить"
+	document.getElementById('lb-resume').onclick = togglePause;
+
+	// Добавляем кнопку паузы в интерфейс (верхний правый угол)
+	const pauseBtn = document.createElement('button');
+	pauseBtn.innerHTML = '⏸';
+	pauseBtn.style.cssText = 'position:absolute; top:10px; right:10px; width:40px; height:40px; font-size:18px; background:rgba(255,255,255,0.2); border:none; border-radius:50%; color:#fff; cursor:pointer; z-index:50; touch-action: manipulation;';
+	pauseBtn.onclick = togglePause;
+	document.body.appendChild(pauseBtn);
+</script>
 </body>
 </html>
