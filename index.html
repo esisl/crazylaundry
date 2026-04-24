@@ -54,7 +54,6 @@
     resize();
 
 	function togglePause() {
-		console.log('togglePause()');
 		if (!gameRunning) return; // Не паузим, если игра уже окончена
 		
 		isPaused = !isPaused;
@@ -62,6 +61,7 @@
 		
 		if (isPaused) {
 			panel.style.display = 'flex';
+			console.log('isPaused');
 			loadLeaderboard(); // Загружаем при открытии
 		} else {
 			panel.style.display = 'none';
