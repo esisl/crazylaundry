@@ -181,40 +181,53 @@
     document.getElementById('restart-btn').onclick = startGame;
     document.getElementById('submit-btn').onclick = submitScore;
 
-    async function submitScore() {
-		const btn = document.getElementById('submit-btn');
-		btn.disabled = true;
-		
-		try {
-			const tg = window.Telegram?.WebApp;
-			if (!tg) {
-			logError('❌ Telegram.WebApp не найден!');
-			btn.textContent = '❌ Нет SDK';
-			return;
-			}
-			
-			const initData = tg.initData || '';
-			
-			// Отправляем score как JSON, а initData — в заголовке
-			const response = await fetch('./api/scores.php', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'X-Telegram-Init-Data': initData  // ← Сырая строка, без кодирования
-			},
-			body: JSON.stringify({score})  // ← Только score в теле
-			});
-			
-			// ... остальная обработка ответа ...
-			
-		} catch (e) {
-			logError(`🔥 Исключение: ${e.message}`);
-			btn.textContent = '❌ Ошибка';
-		} finally {
-			btn.disabled = false;
-		}
-		}
-	
+
+	async function submitScore() {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  
+  try {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) {
+      logError('❌ Telegram.WebApp не найден!');
+      btn.textContent = '❌ Нет SDK';
+      return;
+    }
+    
+    const initData = tg.initData || '';
+    log(`🔑 initData длина: ${initData.length}`, 'info');
+    
+    // ОТПРАВЛЯЕМ initData В ЗАГОЛОВКЕ, а не в теле
+    const response = await fetch('./api/scores.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData  // ← Сырая строка, без кодирования
+      },
+      body: JSON.stringify({ score })  // ← В теле только score
+    });
+    
+    log(`📡 Ответ: ${response.status}`, response.ok ? 'info' : 'error');
+    const text = await response.text();
+    log(`📄 Тело: ${text}`, 'info');
+    
+    const data = JSON.parse(text);
+    if (response.ok && data.status === 'ok') {
+      log(`✅ Сохранено!`, 'info');
+      btn.textContent = '✅ OK';
+    } else {
+      logError(`❌ ${data.error || 'Ошибка'}`);
+      btn.textContent = '❌ Ошибка';
+    }
+    
+  } catch (e) {
+    logError(`🔥 ${e.message}`);
+    btn.textContent = '❌ Сеть';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 	
     startGame();
   </script>

@@ -5,7 +5,6 @@ header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type, X-Telegram-Init-Data');
 
 // === КОНФИГ ===
-debugLog('PATH botToken: ', __DIR__ . '/../token');
 $BOT_TOKEN = file_get_contents(__DIR__ . '/../token');
 $DB_PATH = __DIR__ . '/scores.sqlite';
 
@@ -28,6 +27,39 @@ function debugLog($message, $data = null) {
 }
 
 // === ВАЛИДАЦИЯ initData ===
+function verifyInitData(string $initData, string $botToken): bool {
+    $params = [];
+    foreach (explode('&', $initData) as $part) {
+        [$key, $value] = explode('=', $part, 2);
+        $params[$key] = $value;  // ← БЕЗ urldecode!
+    }
+    
+    if (!isset($params['hash'])) return false;
+    $hash = $params['hash'];
+    
+    // === ИСКЛЮЧАЕМ служебные поля ===
+    unset($params['hash'], $params['signature']);
+    
+    // Сортировка ключей
+    uksort($params, fn($a, $b) => $a <=> $b);
+    
+    // Формирование строки (разделитель - байт 0x0A)
+    $dataCheckString = implode("\n", array_map(
+        fn($k, $v) => "$k=$v", 
+        array_keys($params), 
+        $params
+    ));
+    
+    // === КРИТИЧНО: порядок аргументов в hash_hmac ===
+    // data="WebAppData", key=$botToken
+    $secretKey = hash_hmac('sha256', 'WebAppData', $botToken, true);
+    
+    // Финальный хэш
+    $calculated = hash_hmac('sha256', $dataCheckString, $secretKey);
+    
+    return hash_equals($calculated, $hash);
+}
+/*
 function verifyInitData(string $initData, string $botToken): bool {
     $params = [];
     foreach (explode('&', $initData) as $part) {
@@ -66,6 +98,7 @@ function verifyInitData(string $initData, string $botToken): bool {
 
     return hash_equals($calculated, $hash);
 }
+*/
 
 // === БД ИНИЦИАЛИЗАЦИЯ ===
 $db = new SQLite3($DB_PATH);
@@ -80,15 +113,18 @@ $db->exec('CREATE TABLE IF NOT EXISTS scores (
 
 // === ОБРАБОТКА ЗАПРОСОВ ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Читаем тело запроса (там только score)
     $input = json_decode(file_get_contents('php://input'), true);
     $score = (int)($input['score'] ?? 0);
-    $initData = $_SERVER['HTTP_X_TELEGRAM_INIT_DATA'] ?? '';
-    $initData = stripcslashes($initData);
 
-    debugLog('Распарсенные данные', [
+    // Читаем initData ИЗ ЗАГОЛОВКА (сырая строка)
+    $initData = $_SERVER['HTTP_X_TELEGRAM_INIT_DATA'] ?? '';
+
+    debugLog('=== ВХОДНЫЕ ДАННЫЕ ===', [
         'score' => $score,
+        'initData_from_header' => !empty($initData),
         'initData_length' => strlen($initData),
-        'initData_preview' => substr($initData, 0, 100) . '...'
+        'initData_preview' => substr($initData, 0, 100)
     ]);
 
     if (!verifyInitData($initData, $BOT_TOKEN)) {
