@@ -34,6 +34,7 @@ function verifyInitData(string $initData, string $botToken): bool {
         $params[$key] = $value;
     }
 
+    debugLog('botToken', $botToken);
     debugLog('Параметры после парсинга', $params);
     
     if (!isset($params['hash'])) {
