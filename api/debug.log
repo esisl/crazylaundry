@@ -1,0 +1,53 @@
+[2026-04-23 19:49:59] === НОВЫЙ ЗАПРОС ===
+Array
+(
+    [method] => POST
+    [content_type] => application/json
+    [raw_input] => {"score":4}
+)
+
+--------------------------------------------------------------------------------
+[2026-04-23 19:49:59] Распарсенные данные
+Array
+(
+    [score] => 4
+    [initData_length] => 565
+    [initData_preview] => user=%7B%22id%22%3A207410978%2C%22first_name%22%3A%22Al%22%2C%22last_name%22%3A%22Mt%22%2C%22usernam...
+)
+
+--------------------------------------------------------------------------------
+[2026-04-23 19:49:59] Параметры после парсинга
+Array
+(
+    [user] => %7B%22id%22%3A207410978%2C%22first_name%22%3A%22Al%22%2C%22last_name%22%3A%22Mt%22%2C%22username%22%3A%22AlMtEsisl%22%2C%22language_code%22%3A%22ru%22%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2Fzs_02C8DWyu88gDWgraCj5qP-4al2rd9YVdJEk7t6sk.svg%22%7D
+    [chat_instance] => 6894375781279278209
+    [chat_type] => private
+    [auth_date] => 1776973787
+    [signature] => CZBat5VyMiTZEr7pva_W7jmeahm3WeK2bnE3SSQr8A4dsWZSHtM591aTItESMGNW88Q0XDBgyCWVkCtDn4tECw
+    [hash] => 96fa244c301dadab6a4c02610e068373896ef472d5fe349aee791a3cce3f91e3
+)
+
+--------------------------------------------------------------------------------
+[2026-04-23 19:49:59] data_check_string
+auth_date=1776973787
+chat_instance=6894375781279278209
+chat_type=private
+signature=CZBat5VyMiTZEr7pva_W7jmeahm3WeK2bnE3SSQr8A4dsWZSHtM591aTItESMGNW88Q0XDBgyCWVkCtDn4tECw
+user=%7B%22id%22%3A207410978%2C%22first_name%22%3A%22Al%22%2C%22last_name%22%3A%22Mt%22%2C%22username%22%3A%22AlMtEsisl%22%2C%22language_code%22%3A%22ru%22%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2Fzs_02C8DWyu88gDWgraCj5qP-4al2rd9YVdJEk7t6sk.svg%22%7D
+--------------------------------------------------------------------------------
+[2026-04-23 19:49:59] Хеши
+Array
+(
+    [received] => 96fa244c301dadab6a4c02610e068373896ef472d5fe349aee791a3cce3f91e3
+    [calculated] => e069cf400ea3e0f46708056341512ab400e61d1dea244370df2f6c7190d3f03d
+    [match] => 
+)
+
+--------------------------------------------------------------------------------
+[2026-04-23 19:49:59] ❌ Валидация НЕ ПРОШЛА
+Array
+(
+    [initData_preview] => user=%7B%22id%22%3A207410978%2C%22first_name%22%3A
+)
+
+--------------------------------------------------------------------------------
