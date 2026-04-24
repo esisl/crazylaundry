@@ -41,6 +41,7 @@ function convertInitData(string $initData): array
     }
     $initDataArray = array_filter($initDataArray);
     sort($initDataArray);
+    debugLog('Параметры после парсинга', $initDataArray);
     return [$hash, implode("\n", $initDataArray)];
 }
 
@@ -79,11 +80,12 @@ function verifyInitData(string $initData, string $botToken): bool {
     
     debugLog('Хеши', [
         'received' => $hash,
+        'dataCheckString' => $dataCheckString,
         'calculated' => $calculated,
-        'match' => hash_equals($calculated, $hash)
+        'match' => hash_equals($calculated, $dataCheckString)
     ]);
 
-    return hash_equals($calculated, $hash);
+    return hash_equals($calculated, $dataCheckString);
 }
 
 // === БД ИНИЦИАЛИЗАЦИЯ ===
