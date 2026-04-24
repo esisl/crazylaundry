@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/Validate.php';
+
 // /home/deploy/crazylaundry/api/scores.php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -118,7 +120,15 @@ debugLog('Входные данные', [
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Валидация
+    /*
     if (!$initData || !verifyInitData($initData, $BOT_TOKEN)) {
+        debugLog('❌ Валидация НЕ ПРОШЛА', ['initData_preview' => substr($initData ?? '', 0, 50)]);
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid initData']);
+        exit;
+    }
+        */
+    if(!$initData || !Validate::isSafe($BOT_TOKEN, $initData)){
         debugLog('❌ Валидация НЕ ПРОШЛА', ['initData_preview' => substr($initData ?? '', 0, 50)]);
         http_response_code(401);
         echo json_encode(['error' => 'Invalid initData']);
