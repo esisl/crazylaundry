@@ -43,13 +43,74 @@
     let lastTime = 0;
     let spawnTimer = 0;
     let difficulty = 1;
-
-    function resize() {
+	// === СОСТОЯНИЕ ПАУЗЫ И ТАБЛИЦА ЛИДЕРОВ ===
+	let isPaused = false;
+    
+	function resize() {
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resize);
     resize();
+
+	function togglePause() {
+		if (!gameRunning) return; // Не паузим, если игра уже окончена
+		
+		isPaused = !isPaused;
+		const panel = document.getElementById('pause-panel');
+		
+		if (isPaused) {
+			panel.style.display = 'flex';
+			loadLeaderboard(); // Загружаем при открытии
+		} else {
+			panel.style.display = 'none';
+			lastTime = performance.now(); // Сбрасываем таймер, чтобы не было скачка dt
+		}
+	}
+	async function loadLeaderboard() {
+		const list = document.getElementById('lb-list');
+		list.innerHTML = '<p style="text-align:center; color:#aaa;">Загрузка...</p>';
+		
+		try {
+			const res = await fetch('./api/scores.php');
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const data = await res.json();
+			
+			if (!Array.isArray(data) || data.length === 0) {
+			list.innerHTML = '<p style="text-align:center; color:#888;">Пока нет рекордов</p>';
+			return;
+			}
+			
+			let html = `<table style="width:100%; border-collapse:collapse; font-size:15px;">
+			<tr style="border-bottom:2px solid #4ecca3;">
+				<th style="padding:8px; text-align:center; color:#aaa;">#</th>
+				<th style="padding:8px; text-align:left;">Игрок</th>
+				<th style="padding:8px; text-align:right;">Счёт</th>
+			</tr>`;
+			
+			data.forEach((row, i) => {
+			const name = row.username || `User ${row.user_id}`;
+			html += `<tr style="border-bottom:1px solid #333;">
+				<td style="padding:6px; text-align:center; color:#888;">${i + 1}</td>
+				<td style="padding:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</td>
+				<td style="padding:6px; text-align:right; font-weight:bold; color:#f9ed69;">${row.score}</td>
+			</tr>`;
+			});
+			html += '</table>';
+			list.innerHTML = html;
+		} catch (e) {
+			list.innerHTML = `<p style="text-align:center; color:#e94560;">Ошибка: ${e.message}</p>`;
+		}
+	}
+	// Привязка кнопки "Продолжить"
+	document.getElementById('lb-resume').onclick = togglePause;
+
+	// Добавляем кнопку паузы в интерфейс (верхний правый угол)
+	const pauseBtn = document.createElement('button');
+	pauseBtn.innerHTML = '⏸';
+	pauseBtn.style.cssText = 'position:absolute; top:10px; right:10px; width:40px; height:40px; font-size:18px; background:rgba(255,255,255,0.2); border:none; border-radius:50%; color:#fff; cursor:pointer; z-index:50; touch-action: manipulation;';
+	pauseBtn.onclick = togglePause;
+	document.body.appendChild(pauseBtn);
 
     // Управление: тап/клик по левой/правой половине экрана
     function handleInput(clientX) {
@@ -137,6 +198,12 @@
     }
 
     function loop(time) {
+		if (!gameRunning) return; // Игра окончена
+		if (isPaused) {
+			// Во время паузы просто продолжаем вызывать rAF, но не обновляем логику
+			requestAnimationFrame(loop);
+			return;
+		}
       const dt = time - lastTime;
       lastTime = time;
       update(dt);
@@ -271,5 +338,14 @@
     if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleDebug(); }
   });
 </script>
+
+<!-- Панель паузы и таблицы лидеров -->
+<div id="pause-panel" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); color:#fff; flex-direction:column; align-items:center; justify-content:center; font-family:monospace; z-index:100; padding:20px; box-sizing:border-box;">
+  <h2 style="margin:0 0 15px 0; font-size:22px; text-align:center;">🏆 Таблица лидеров</h2>
+  <div id="lb-list" style="width:100%; max-height:55vh; overflow-y:auto; margin-bottom:20px; background:rgba(255,255,255,0.05); border-radius:8px; padding:10px;">
+    <p style="text-align:center; color:#aaa;">Загрузка...</p>
+  </div>
+  <button id="lb-resume" style="padding:12px 24px; font-size:16px; background:#4ecca3; border:none; border-radius:4px; cursor:pointer; color:#000; font-weight:bold;">▶ ПРОДОЛЖИТЬ</button>
+</div>
 </body>
 </html>
