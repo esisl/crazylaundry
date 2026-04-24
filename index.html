@@ -54,6 +54,7 @@
     resize();
 
 	function togglePause() {
+		console.log('togglePause()');
 		if (!gameRunning) return; // Не паузим, если игра уже окончена
 		
 		isPaused = !isPaused;
