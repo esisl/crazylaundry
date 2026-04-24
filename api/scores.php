@@ -5,7 +5,7 @@ header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type, X-Telegram-Init-Data');
 
 // === КОНФИГ ===
-$BOT_TOKEN = '8724678659:AAHMgXq2T1JMne2WqASz0kL_EQKw67Sd7As';
+$BOT_TOKEN = file_get_contents('token');
 $DB_PATH = __DIR__ . '/scores.sqlite';
 
 debugLog('=== НОВЫЙ ЗАПРОС ===', [
