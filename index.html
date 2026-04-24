@@ -19,12 +19,29 @@
 <body>
   <div id="ui">Счёт: <span id="score">0</span></div>
   <canvas id="game"></canvas>
+  <!--
   <div id="gameover">
     <h2>GAME OVER</h2>
     <p>Финальный счёт: <span id="final-score">0</span></p>
     <button id="restart-btn">ЗАНОВО</button>
     <button id="submit-btn">ОТПРАВИТЬ РЕКОРД</button>
+  </div>-->
+  <div id="gameover" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); color:#fff; flex-direction:column; align-items:center; justify-content:flex-start; font-family:monospace; padding:15px; box-sizing:border-box; overflow-y:auto; z-index:200;">
+  <h2 style="margin:10px 0 5px 0; font-size:24px;">GAME OVER</h2>
+  <p style="font-size:18px; margin:5px 0;">Финальный счёт: <span id="final-score" style="color:#f9ed69; font-weight:bold;">0</span></p>
+  
+  <div style="display:flex; gap:10px; margin:15px 0; flex-wrap:wrap; justify-content:center;">
+    <button id="restart-btn" style="padding:10px 20px; font-size:16px; background:#4ecca3; border:none; border-radius:4px; cursor:pointer; color:#000; font-weight:bold;">ЗАНОВО</button>
+    <button id="submit-btn" style="padding:10px 20px; font-size:16px; background:#e94560; border:none; border-radius:4px; cursor:pointer; color:#fff; font-weight:bold;">ОТПРАВИТЬ РЕКОРД</button>
   </div>
+
+  <div style="width:100%; max-width:360px; margin-top:5px;">
+    <h3 style="text-align:center; margin:0 0 8px 0; font-size:18px;">🏆 Топ игроков</h3>
+    <div id="go-leaderboard" style="max-height:45vh; overflow-y:auto; background:rgba(255,255,255,0.05); border-radius:8px; padding:8px;">
+      <p style="text-align:center; color:#aaa; margin:10px 0;">Загрузка...</p>
+    </div>
+  </div>
+</div>
 
   <script>
     if (window.Telegram?.WebApp) {
@@ -231,11 +248,58 @@
 		})();
     }
 
+
+	async function loadGameOverLeaderboard() {
+	const container = document.getElementById('go-leaderboard');
+	container.innerHTML = '<p style="text-align:center; color:#aaa; margin:10px 0;">Загрузка...</p>';
+
+	try {
+		const res = await fetch('./api/scores.php');
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		const data = await res.json();
+
+		if (!Array.isArray(data) || data.length === 0) {
+		container.innerHTML = '<p style="text-align:center; color:#888; margin:15px 0;">Рекордов пока нет. Станьте первым!</p>';
+		return;
+		}
+
+		// Получаем имя текущего пользователя для подсветки (безопасно для UI)
+		const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+		const currentUsername = tgUser?.username || '';
+
+		let html = `<table style="width:100%; border-collapse:collapse; font-size:14px;">
+		<tr style="border-bottom:2px solid #4ecca3;">
+			<th style="padding:8px; text-align:center; color:#aaa;">#</th>
+			<th style="padding:8px; text-align:left;">Игрок</th>
+			<th style="padding:8px; text-align:right;">Счёт</th>
+		</tr>`;
+
+		data.forEach((row, i) => {
+		const name = row.username || `User ${row.user_id}`;
+		// Подсветка строки, если это текущий игрок
+		const isCurrent = currentUsername && name.toLowerCase() === currentUsername.toLowerCase();
+		const rowStyle = isCurrent ? 'background:rgba(78, 204, 163, 0.15);' : '';
+		
+		html += `<tr style="border-bottom:1px solid #333; ${rowStyle}">
+			<td style="padding:6px; text-align:center; color:#888;">${i + 1}</td>
+			<td style="padding:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:${isCurrent?'bold':'normal'};">${name}</td>
+			<td style="padding:6px; text-align:right; font-weight:bold; color:#f9ed69;">${row.score}</td>
+		</tr>`;
+		});
+		html += '</table>';
+		container.innerHTML = html;
+	} catch (e) {
+		container.innerHTML = `<p style="text-align:center; color:#e94560; margin:10px 0;">Ошибка загрузки</p>`;
+	}
+	}
+
     function gameOver() {
       gameRunning = false;
       document.getElementById('final-score').textContent = score;
       document.getElementById('gameover').style.display = 'flex';
-	  loadLeaderboard(); 
+
+	  // Автоматически загружаем таблицу при проигрыше
+	  loadGameOverLeaderboard();
     }
 
     document.getElementById('restart-btn').onclick = startGame;
