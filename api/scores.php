@@ -45,6 +45,8 @@ function verifyInitData(string $initData, string $botToken): bool {
 
     $hash = $params['hash'];
     unset($params['hash']);
+    $signature = $params['signature'];
+    unset($params['signature']);
     
     uksort($params, fn($a, $b) => $a <=> $b);
     $dataCheckString = implode("\n", array_map(fn($k, $v) => "$k=$v", array_keys($params), $params));
