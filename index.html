@@ -61,7 +61,6 @@
 		
 		if (isPaused) {
 			panel.style.display = 'flex';
-			console.log('isPaused');
 			loadLeaderboard(); // Загружаем при открытии
 		} else {
 			panel.style.display = 'none';
@@ -236,6 +235,7 @@
       gameRunning = false;
       document.getElementById('final-score').textContent = score;
       document.getElementById('gameover').style.display = 'flex';
+	  loadLeaderboard(); 
     }
 
     document.getElementById('restart-btn').onclick = startGame;
